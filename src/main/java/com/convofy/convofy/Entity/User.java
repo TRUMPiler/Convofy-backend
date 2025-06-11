@@ -19,11 +19,13 @@ import java.time.ZonedDateTime;
 public class User {
     @PrimaryKey("userid")
     private String userid;
-    private boolean status;
+    private boolean status=false;
     private LocalDate dob;        // Change from String to LocalDate
     private ZonedDateTime doj;      // Matches the table's `doj` column (Cassandra `timestamp` type)
     private String email;  // Matches the table's `email` column
     private String name;   // Matches the table's `name` column
     private String password; // Matches the table's `password` column
     private String phone;  // Matches the table's `phone` column
+
+
 }

@@ -18,6 +18,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<Response<String>> createUser(@RequestBody User user) throws Exception{
         try {
+
             userRepository.save(user);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new Response<>(true, "User created successfully", "User ID: " + user.getUserid()));
@@ -26,6 +27,9 @@ public class UserController {
                     .body(new Response<>(false, e.getMessage(), null));
         }
     }
+
+
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Response<User>> getUser(@PathVariable String id)throws Exception {
@@ -50,15 +54,43 @@ public class UserController {
         }
     }
 
-    @PatchMapping
+    @PatchMapping("/user")
     public ResponseEntity<Response<String>> updateUser(@RequestBody User user) throws Exception{
         try {
+            if(userRepository.findById(user.getUserid()).isEmpty()){
+               return ResponseEntity.badRequest().body(new Response<>(false, "User not found", null));
+            }
             userRepository.save(user);
             return ResponseEntity.ok(new Response<>(true, "User updated successfully", "User ID: " + user.getUserid()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Response<>(false, e.getMessage(), null));
         }
+    }
+    @PatchMapping("/status")
+    public ResponseEntity<Response<String>> updateUserStatus(@RequestBody User userid) throws Exception{
+        System.out.println(userid.isStatus());
+
+        try{
+            if(userRepository.findById(userid.getUserid()).isPresent()){
+            Optional<User> userdetails = userRepository.findById(userid.getUserid());
+            System.out.println(userid.isStatus());
+
+                User user = userdetails.get();
+
+                user.setStatus(userid.isStatus());
+                userRepository.save(user);
+                return ResponseEntity.status(HttpStatus.OK).body(new Response<>(true, "User Status successfully updated", "User ID: " + user.getUserid()));
+            }else
+            {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response<>(false, "User not found", null));
+            }
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response<>(false, e.getMessage(), null));
+        }
+
     }
 
     @DeleteMapping
