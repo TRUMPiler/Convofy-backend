@@ -1,13 +1,19 @@
 package com.convofy.convofy.Controller;
 import com.convofy.convofy.CassandraOperations.UserRepository;
 import com.convofy.convofy.Entity.User;
+import com.convofy.convofy.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.convofy.convofy.utils.Response;
+
+import java.lang.ref.Cleaner;
 import java.util.ArrayList;
 import java.util.Optional;
+import com.convofy.convofy.utils.PasswordHasher;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,7 +25,12 @@ public class UserController {
     public ResponseEntity<Response<String>> createUser(@RequestBody User user) throws Exception{
         try {
 
+            PasswordHasher passwordHasher = new PasswordHasher();
+            System.out.println(user.getPassword());
+            user.setPassword(passwordHasher.hashPassword(user.getPassword()));
             userRepository.save(user);
+            User users=new  User();
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new Response<>(true, "User created successfully", "User ID: " + user.getUserid()));
         } catch (Exception e) {
@@ -60,13 +71,74 @@ public class UserController {
             if(userRepository.findById(user.getUserid()).isEmpty()){
                return ResponseEntity.badRequest().body(new Response<>(false, "User not found", null));
             }
-            userRepository.save(user);
+            User existingdetails=userRepository.findById(user.getUserid()).get();
+            if(!user.getUserid().equals(""))
+            {
+                existingdetails.setUserid(user.getUserid());
+            }
+            if(!user.getName().equals(""))
+            {
+                existingdetails.setName(user.getName());
+            }
+            if(!user.getPassword().equals(""))
+            {
+
+                existingdetails.setPassword(user.getPassword());
+            }
+            if(!user.getEmail().equals(""))
+            {
+                existingdetails.setEmail(user.getEmail());
+            }
+            if(!user.getPhone().equals(""))
+            {
+                existingdetails.setPhone(user.getPhone());
+            }
+            if(!user.getDob().equals(""))
+            {
+                existingdetails.setDob(user.getDob());
+            }
+            userRepository.save(existingdetails);
+
             return ResponseEntity.ok(new Response<>(true, "User updated successfully", "User ID: " + user.getUserid()));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Response<>(false, e.getMessage(), null));
         }
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<Response<User>> LoginUser(@RequestBody LoginRequest loginRequest) throws Exception {
+        try {
+            // Find the user by email
+            Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
+
+            // Check if the user exists
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new Response<>(false, "User not found", null));
+            }
+
+            User user = userOptional.get();
+
+            if (!PasswordHasher.verifyPassword(loginRequest.getPassword(), user.getPassword())) {
+                System.out.println(PasswordHasher.hashPassword(loginRequest.getPassword())+" "+user.getPassword());
+                System.out.println(loginRequest.getPassword());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new Response<>(false, "Invalid password", null));
+            }
+
+
+            return ResponseEntity.ok(new Response<>(true, "Login successful",user));
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response<>(false, "An error occurred during login", null));
+        }
+    }
+
     @PatchMapping("/status")
     public ResponseEntity<Response<String>> updateUserStatus(@RequestBody User userid) throws Exception{
         System.out.println(userid.isStatus());
@@ -96,6 +168,9 @@ public class UserController {
     @DeleteMapping
     public ResponseEntity<Response<String>> deleteUser(@RequestBody User user) throws Exception{
         try {
+            if(userRepository.findById(user.getUserid()).isEmpty()){
+                return ResponseEntity.badRequest().body(new Response<>(false, "User not found", null));
+            }
             userRepository.delete(user);
             return ResponseEntity.ok(new Response<>(true, "User deleted successfully", "User ID: " + user.getUserid()));
         } catch (Exception e) {
@@ -115,6 +190,8 @@ public class UserController {
         }
     }
 }
+
+
 
 
 
