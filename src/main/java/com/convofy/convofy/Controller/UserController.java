@@ -26,7 +26,6 @@ public class UserController {
     @PostMapping
     public ResponseEntity<Response<String>> createUser(@RequestBody User user) throws Exception{
         try {
-
             user.setUserid(UUID.randomUUID().toString());
             PasswordHasher passwordHasher = new PasswordHasher();
 
