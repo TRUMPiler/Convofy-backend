@@ -21,19 +21,30 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+    private Cleaner cleaner=Cleaner.create();
+    private Runnable runnable=()->{};
     @PostMapping
     public ResponseEntity<Response<String>> createUser(@RequestBody User user) throws Exception{
         try {
 
+            user.setUserid(UUID.randomUUID().toString());
             PasswordHasher passwordHasher = new PasswordHasher();
-            System.out.println(user.getPassword());
+
+            long count = userRepository.countByEmail(user.getEmail());
+            if (count > 0) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(new Response<>(false, "Email already exists", null));
+            }
+
+
             user.setPassword(passwordHasher.hashPassword(user.getPassword()));
             userRepository.save(user);
-            User users=new  User();
 
+            cleaner.register(passwordHasher,runnable);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new Response<>(true, "User created successfully", "User ID: " + user.getUserid()));
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Response<>(false, e.getMessage(), null));
         }
@@ -46,6 +57,7 @@ public class UserController {
     public ResponseEntity<Response<User>> getUser(@PathVariable String id)throws Exception {
         try {
             Optional<User> user = userRepository.findById(id);
+            cleaner.register(user,runnable);
             return user.map(value -> ResponseEntity.ok(new Response<>(true, "User found", value))).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new Response<>(false, "User not found", null)));
         } catch (Exception e) {
@@ -58,6 +70,7 @@ public class UserController {
     public ResponseEntity<Response<ArrayList<User>>> getUsers() throws Exception{
         try {
             ArrayList<User> users = new ArrayList<>(userRepository.findAll());
+            cleaner.register(users,runnable);
             return ResponseEntity.ok(new Response<>(true, "Users retrieved successfully", users));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -72,6 +85,7 @@ public class UserController {
                return ResponseEntity.badRequest().body(new Response<>(false, "User not found", null));
             }
             User existingdetails=userRepository.findById(user.getUserid()).get();
+            cleaner.register(existingdetails,runnable);
             if(!user.getUserid().equals(""))
             {
                 existingdetails.setUserid(user.getUserid());
@@ -97,6 +111,10 @@ public class UserController {
             {
                 existingdetails.setDob(user.getDob());
             }
+            if(!user.getImage().equals(""))
+            {
+                existingdetails.setImage(user.getImage());
+            }
             userRepository.save(existingdetails);
 
             return ResponseEntity.ok(new Response<>(true, "User updated successfully", "User ID: " + user.getUserid()));
@@ -112,7 +130,7 @@ public class UserController {
         try {
             // Find the user by email
             Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
-
+            cleaner.register(userOptional,runnable);
             // Check if the user exists
             if (userOptional.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -120,10 +138,10 @@ public class UserController {
             }
 
             User user = userOptional.get();
-
+            cleaner.register(user,runnable);
             if (!PasswordHasher.verifyPassword(loginRequest.getPassword(), user.getPassword())) {
-                System.out.println(PasswordHasher.hashPassword(loginRequest.getPassword())+" "+user.getPassword());
-                System.out.println(loginRequest.getPassword());
+//                System.out.println(PasswordHasher.hashPassword(loginRequest.getPassword())+" "+user.getPassword());
+//                System.out.println(loginRequest.getPassword());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new Response<>(false, "Invalid password", null));
             }
@@ -144,10 +162,11 @@ public class UserController {
         System.out.println(userid.isStatus());
 
         try{
+
             if(userRepository.findById(userid.getUserid()).isPresent()){
             Optional<User> userdetails = userRepository.findById(userid.getUserid());
             System.out.println(userid.isStatus());
-
+            cleaner.register(userdetails,runnable);
                 User user = userdetails.get();
 
                 user.setStatus(userid.isStatus());
@@ -183,6 +202,7 @@ public class UserController {
     public ResponseEntity<Response<Long>> userCount() throws Exception {
         try {
             long count = userRepository.count();
+
             return ResponseEntity.ok(new Response<>(true, "User count retrieved successfully", count));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -19,14 +19,14 @@ import java.util.Date;
 @NoArgsConstructor
 @Table("user")
 public class User {
-    @PrimaryKey("userid")
+
     private String userid="";
     private boolean status=false;
     private LocalDate dob=null;
-    private ZonedDateTime doj =null ;
+    @PrimaryKey("email")
     private String email="";
     private String name="";
     private String password="";
     private String phone="";
-
+    private String image="";
 }

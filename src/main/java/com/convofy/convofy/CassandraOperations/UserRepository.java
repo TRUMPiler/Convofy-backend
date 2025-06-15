@@ -11,5 +11,8 @@ public interface UserRepository extends CassandraRepository<User, String>
 {
     @Query("SELECT * FROM convofy.user WHERE email = ?0")
     Optional<User> findByEmail(String email);
+    @Query("SELECT COUNT(*) FROM convofy.user WHERE email = ?0 ALLOW FILTERING")
+    long countByEmail(String email);
+
 }
 
