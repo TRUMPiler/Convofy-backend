@@ -1,54 +1,38 @@
 package com.convofy.convofy.Entity;
 
 import lombok.Getter;
-import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Random;
-import java.util.random.RandomGenerator;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+
 
 @Getter
-@Setter
 public class WaitingQueue {
-    private static WaitingQueue instance; // Static instance of the class
-    private HashSet<String> users;
-    private String randomuserid;
-
-    // Private constructor to prevent external instantiation
-    private WaitingQueue() {
-        users = new HashSet<>();
+    private ConcurrentLinkedQueue queue = new ConcurrentLinkedQueue();
+    private ArrayList<String> list;
+    private WaitingQueue()
+    {
+        System.out.println("WaitingQueue()");
+        list = new ArrayList<>();
     }
+    public static WaitingQueue instance;
+    public static WaitingQueue getInstance()
+    {
 
-    // Static method to get the single instance (Thread-safe using synchronized)
-    public static synchronized WaitingQueue getInstance() {
         if (instance == null) {
             instance = new WaitingQueue();
         }
         return instance;
     }
-
-    public int count() {
-        return users.size();
+    public long count(){
+        return list.size();
     }
-
-    public boolean addUser(String userId) {
-        return users.add(userId);
+    public boolean addid(String id){
+        list.add(id);
+        return true;
     }
-    public String removeUser() {
-        if (count() > 1) {
-            // Get a random user ID from the HashSet
-            String randomUserId = users.stream()
-                    .skip(new Random().nextInt(users.size()))
-                    .findFirst()
-                    .orElse(null);
-
-
-            users.remove(randomUserId);
-            return randomUserId;
-        } else {
-
-            return "Not enough users to remove.";
-        }
+    public String removeid(){
+        return list.removeFirst();
     }
-
 }

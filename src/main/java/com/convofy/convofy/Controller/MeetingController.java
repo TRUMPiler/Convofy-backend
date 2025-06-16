@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/meetings")
@@ -19,19 +20,24 @@ public class MeetingController {
     @Autowired
     private VideoSDKServices videoSDKService;
     private ArrayList<String> meetids = new ArrayList<>();
+    @Autowired
     private MeetRepository meetRepository;
     @PostMapping("/create")
-    public ResponseEntity<Response<String>> createMeeting(@RequestBody MeetSession meetSession) throws Exception {
+    public ResponseEntity<Response<MeetSession>> createMeeting(@RequestBody MeetSession meetSession) throws Exception {
 
         String meetingId = videoSDKService.createMeeting();
+
         if (meetingId != null)
         {
-
+            if(meetids.contains(meetingId)){
+                meetingId= videoSDKService.createMeeting();
+            }
+            meetSession.setSessionid(UUID.randomUUID().toString());
             meetSession.setMeetid(meetingId);
             meetids.add(meetingId);
             meetRepository.insert(meetSession);
             return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new Response<>(true, "MeetId Created Successfully",meetingId));
+                        .body(new Response<>(true, "MeetId Created Successfully",meetSession));
         }
         else
         {
@@ -45,7 +51,7 @@ public class MeetingController {
     @GetMapping("/exitcall")
     public ResponseEntity<Response<String>> exitcall(@RequestBody MeetSession meetSession) throws Exception {
         meetids.remove(meetSession.getMeetid());
-        meetSession.setStatus(false);
+
         meetRepository.save(meetSession);
         return ResponseEntity.status(HttpStatus.OK).body(new Response<>(true,"meeting session deactivated",null));
     }
