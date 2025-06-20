@@ -35,4 +35,7 @@ public class WaitingQueue {
     public String removeid(){
         return list.removeFirst();
     }
+    public boolean checkid(String id){
+        return list.contains(id);
+    }
 }

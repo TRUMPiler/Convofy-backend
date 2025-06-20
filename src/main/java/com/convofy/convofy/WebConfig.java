@@ -13,9 +13,10 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173") // Allow only your frontend's origin
+                        .allowedOriginPatterns("http://localhost:5173") // Allow only your frontend's origin
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
+
             }
         };
     }

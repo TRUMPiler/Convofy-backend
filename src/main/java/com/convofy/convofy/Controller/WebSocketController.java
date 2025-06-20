@@ -1,16 +1,36 @@
 package com.convofy.convofy.Controller;
 
 
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
+@AllArgsConstructor
 @Controller
 public class WebSocketController {
 
-    @MessageMapping("/notify")
-    @SendTo("/queue/matches")
-    public String notifyUser(String message) {
-        return "Match Found! " + message;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+
+
+     // Sends a message every 5 seconds
+//    public void sendMessages() {
+//        System.out.println("Sending messages");
+//        String message = "Message #" + counter++;
+//        messagingTemplate.convertAndSend("/topic/updates", message);
+//    }
+    public void notifyUser(String userId, String meetingId) {
+        Map<String, String> payload = new HashMap<>();
+        payload.put("meetId", meetingId);
+        payload.put("message", "You have been matched!");
+        payload.put("userId", userId);  
+        System.out.println("Sending message to user: " + userId);
+        messagingTemplate.convertAndSend("/queue/matches", payload);
     }
 }
