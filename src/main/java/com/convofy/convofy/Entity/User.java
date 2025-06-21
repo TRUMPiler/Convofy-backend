@@ -1,13 +1,15 @@
 package com.convofy.convofy.Entity;
 
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.Table;
+
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -17,13 +19,14 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table("user")
+@Entity
+@Table(name="\"user\"")
 public class User {
 
     private String userid="";
     private boolean status=false;
     private LocalDate dob=null;
-    @PrimaryKey("email")
+    @Id
     private String email="";
     private String name="";
     private String password="";

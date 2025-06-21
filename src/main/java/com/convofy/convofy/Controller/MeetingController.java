@@ -1,7 +1,6 @@
 package com.convofy.convofy.Controller;
-import com.convofy.convofy.CassandraOperations.MeetRepository;
+import com.convofy.convofy.Repository.MeetRepository;
 import com.convofy.convofy.Entity.MeetSession;
-import com.convofy.convofy.Entity.User;
 import com.convofy.convofy.utils.Response;
 import com.convofy.convofy.utils.VideoSDKServices;
 import org.springframework.beans.factory.annotation.Autowired;

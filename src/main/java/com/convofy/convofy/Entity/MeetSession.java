@@ -1,11 +1,13 @@
 package com.convofy.convofy.Entity;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.Table;
+
 
 import java.sql.Time;
 import java.util.Date;
@@ -14,10 +16,11 @@ import java.util.Date;
 @Setter
 @Getter
 @NoArgsConstructor
-@Table("meet")
+@Entity
+@Table(name="meet")
 public class MeetSession
 {
-    @PrimaryKey("sessionid")
+    @Id
     private String sessionid="";
     private String userid1="";
     private String userid2="";

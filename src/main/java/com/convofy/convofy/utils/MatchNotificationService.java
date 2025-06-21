@@ -1,6 +1,6 @@
 package com.convofy.convofy.utils;
 
-import com.datastax.oss.driver.internal.core.type.codec.SmallIntCodec;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 

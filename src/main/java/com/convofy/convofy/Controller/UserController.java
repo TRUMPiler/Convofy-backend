@@ -1,9 +1,8 @@
 package com.convofy.convofy.Controller;
-import com.convofy.convofy.CassandraOperations.UserRepository;
+import com.convofy.convofy.Repository.UserRepository;
 import com.convofy.convofy.Entity.User;
 import com.convofy.convofy.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -157,30 +156,38 @@ public class UserController {
     }
 
     @PatchMapping("/status")
-    public ResponseEntity<Response<String>> updateUserStatus(@RequestBody User userid) throws Exception{
-        System.out.println(userid.isStatus());
+    public ResponseEntity<Response<String>> updateUserStatus(@RequestBody User userUpdates) throws Exception {
+        // userUpdates is the User object received from the request body.
+        // It should contain the userid to identify the user and the new status.
 
-        try{
+        System.out.println("Received status update request for userid: " + userUpdates.getUserid() + ", new status: " + userUpdates.isStatus());
 
-            if(userRepository.findById(userid.getUserid()).isPresent()){
-            Optional<User> userdetails = userRepository.findById(userid.getUserid());
-            System.out.println(userid.isStatus());
-            cleaner.register(userdetails,runnable);
-                User user = userdetails.get();
+        try {
+            // Find the user by their 'userid' field, NOT by their primary key 'email'
+            Optional<User> userdetailsOptional = userRepository.findByEmail(userUpdates.getEmail());
 
-                user.setStatus(userid.isStatus());
-                userRepository.save(user);
-                return ResponseEntity.status(HttpStatus.OK).body(new Response<>(true, "User Status successfully updated", "User ID: " + user.getUserid()));
-            }else
-            {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response<>(false, "User not found", null));
+            if (userdetailsOptional.isPresent()) {
+                User existingUser = userdetailsOptional.get();
+
+                // Update only the 'status' field
+                existingUser.setStatus(userUpdates.isStatus());
+
+                // Save the updated user (this will perform an UPDATE in the database)
+                userRepository.save(existingUser);
+
+                // Assuming cleaner and runnable are set up correctly
+                // cleaner.register(existingUser, runnable);
+
+                return ResponseEntity.status(HttpStatus.OK).body(new Response<>(true, "User Status successfully updated", "User ID: " + existingUser.getUserid()));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response<>(false, "User not found with provided userid", null));
             }
-        }catch (Exception e){
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error updating user status: " + e.getMessage()); // Use System.err for errors
+            e.printStackTrace(); // Print stack trace for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response<>(false, e.getMessage(), null));
+                    .body(new Response<>(false, "Failed to update user status: " + e.getMessage(), null));
         }
-
     }
 
     @DeleteMapping
