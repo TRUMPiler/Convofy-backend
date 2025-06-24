@@ -25,11 +25,12 @@ public class WebSocketController {
 //        String message = "Message #" + counter++;
 //        messagingTemplate.convertAndSend("/topic/updates", message);
 //    }
-    public void notifyUser(String userId, String meetingId) {
+    public void notifyUser(String userId, String useremail,String meetingId) {
         Map<String, String> payload = new HashMap<>();
         payload.put("meetId", meetingId);
         payload.put("message", "You have been matched!");
-        payload.put("userId", userId);  
+        payload.put("userId", userId);
+        payload.put("useremail", useremail);
         System.out.println("Sending message to user: " + userId);
         messagingTemplate.convertAndSend("/queue/matches", payload);
     }

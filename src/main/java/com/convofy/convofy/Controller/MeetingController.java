@@ -59,8 +59,8 @@ public class MeetingController {
             meetSession.setMeetid(meetingId);
             meetSession.setSessionid(UUID.randomUUID().toString());
             meetRepository.save(meetSession);
-            webSocketController.notifyUser(meetSession.getUserid1(), meetSession.getMeetid());
-            webSocketController.notifyUser(meetSession.getUserid2(), meetSession.getMeetid());
+            webSocketController.notifyUser(meetSession.getUserid1(), meetSession.getUserid2(),meetSession.getMeetid());
+            webSocketController.notifyUser(meetSession.getUserid2(), meetSession.getUserid1(),meetSession.getMeetid());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new Response<>(true, "MeetId Created Successfully", meetSession));
         } else {
