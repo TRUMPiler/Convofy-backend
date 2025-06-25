@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.broker.BrokerAvailabilityEvent;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -23,7 +24,12 @@ public class WebSocketEventListener {
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String sessionId = headerAccessor.getSessionId();
-        UserPrincipal userPrincipal = (UserPrincipal) headerAccessor.getUser();
+        Authentication authentication = (Authentication) headerAccessor.getUser();
+        UserPrincipal userPrincipal = null;
+
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        }
 
         if (userPrincipal != null) {
             System.out.println("WebSocket connected: Session ID - " + sessionId + ", User - " + userPrincipal.getName() + " (" + userPrincipal.getUserId() + ")");

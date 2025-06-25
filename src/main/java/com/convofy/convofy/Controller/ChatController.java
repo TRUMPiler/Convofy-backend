@@ -1,5 +1,6 @@
 package com.convofy.convofy.Controller;
 
+import com.convofy.convofy.Entity.User;
 import com.convofy.convofy.security.UserPrincipal;
 import com.convofy.convofy.Entity.ChatMessage;
 import com.convofy.convofy.Entity.Interest;
@@ -11,19 +12,31 @@ import com.convofy.convofy.dto.ClientMessageDTO;
 import com.convofy.convofy.dto.JoinRoomRequest;
 import com.convofy.convofy.Service.ChatRoomPresenceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.data.domain.PageRequest; // For creating Pageable instances
+import org.springframework.data.domain.Pageable;   // For Pageable interface
+import org.springframework.data.domain.Sort;      // For sorting results
+
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+// Changed from @Controller to @RestController
+import org.springframework.web.bind.annotation.RestController; // Changed from @Controller
 import org.springframework.security.core.Authentication; // Import Authentication
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMapping; // Import RequestMapping
 
 import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
 
-@Controller
+@RestController // Use @RestController for RESTful APIs
+@RequestMapping("/api") // Add a class-level RequestMapping for /api base path
 public class ChatController {
 
     @Autowired
@@ -85,6 +98,60 @@ public class ChatController {
 
         messagingTemplate.convertAndSend("/topic/chatroom/" + chatroomId + "/messages", messageResponse);
         System.out.println("Broadcasted message to /topic/chatroom/" + chatroomId + "/messages");
+    }
+
+    // Now this endpoint will be accessible at /api/chat/history/{chatroomId}
+    @GetMapping("/chat/history/{chatroomId}")
+    public ResponseEntity<com.convofy.convofy.utils.Response<List<ChatMessageResponseDTO>>> getChatHistory(
+            @PathVariable UUID chatroomId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        try {
+            if (!interestRepository.existsById(chatroomId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new com.convofy.convofy.utils.Response<>(false, "Chatroom not found", null));
+            }
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+            List<ChatMessage> chatMessages = chatMessageRepository.findByChatroomIdOrderByTimestampDesc(chatroomId, pageable);
+
+
+            Set<UUID> senderIds = chatMessages.stream()
+                    .map(ChatMessage::getSenderId)
+                    .collect(Collectors.toSet());
+
+            List<User> senders = userRepository.findAllById(senderIds);
+
+            Map<UUID, User> senderMap = senders.stream()
+                    .collect(Collectors.toMap(User::getUserId, user -> user));
+
+            List<ChatMessageResponseDTO> messageDTOs = chatMessages.stream().map(msg -> {
+                String senderName = "Unknown User";
+                String senderAvatar = "https://github.com/shadcn.png"; // Default avatar
+
+                User sender = senderMap.get(msg.getSenderId());
+                if (sender != null) {
+                    senderName = sender.getName();
+                    senderAvatar = sender.getImage() != null ? sender.getImage() : "https://github.com/shadcn.png";
+                }
+
+                return new ChatMessageResponseDTO(
+                        msg.getMessageId().toString(),
+                        msg.getSenderId().toString(),
+                        senderName,
+                        senderAvatar,
+                        msg.getContent(),
+                        msg.getTimestamp().toString()
+                );
+            }).collect(Collectors.toList());
+
+            return ResponseEntity.ok(new com.convofy.convofy.utils.Response<>(true, "Chat history retrieved successfully", messageDTOs));
+        } catch (Exception e) {
+            System.err.println("Error fetching chat history for room " + chatroomId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR) // Changed from OK to INTERNAL_SERVER_ERROR
+                    .body(new com.convofy.convofy.utils.Response<>(false, "Failed to retrieve chat history: " + e.getMessage(), null));
+        }
     }
 
     @MessageMapping("/chat.joinRoom")

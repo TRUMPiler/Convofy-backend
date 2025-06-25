@@ -5,9 +5,14 @@ import com.convofy.convofy.Entity.MeetSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface FriendsRepository extends JpaRepository<Friends, String> {
-    Optional<Friends> findByUserIdAndFriendId(String userId, String friendId);
+    Optional<Friends> findByUserIdAndFriendId(UUID userId, UUID friendId);
 
-    Iterable<Friends> findByUserIdOrFriendIdAndStatus(String userId, String friendId, String status);
+    Iterable<Friends> findByUserIdOrFriendIdAndStatus(UUID userId, UUID friendId, String status);
+
+    Optional<Friends> findById(UUID id);
+
+    void deleteById(UUID id);
 }

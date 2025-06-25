@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "friends")
@@ -18,13 +19,13 @@ public class Friends {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Automatically generate primary key
-    private int id;
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private String userId;
+    private UUID userId;
 
     @Column(name = "friend_id", nullable = false)
-    private String friendId;
+    private UUID friendId;
 
     @Column(name = "status", nullable = false)
     private String status = "pending"; // Default value
@@ -35,7 +36,7 @@ public class Friends {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now(); // Automatically set when the record is updated
 
-    public Friends(String userId, String friendId, String pending) {
+    public Friends(UUID userId, UUID friendId, String pending) {
         this.userId = userId;
         this.friendId = friendId;
         this.status = pending;
