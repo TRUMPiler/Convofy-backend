@@ -13,7 +13,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOriginPatterns("http://localhost:5173","http://192.168.29.132:5173","https://convofy-frontend-bdk8o1bqx-naishal-doshis-projects.vercel.app") // Allow only your frontend's origin
+                        .allowedOriginPatterns("http://localhost:5173","http://192.168.29.132:5173","https://convofy-frontend-bdk8o1bqx-naishal-doshis-projects.vercel.app","https://convofy-frontend-weld.vercel.app") // Allow only your frontend's origin
 
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
