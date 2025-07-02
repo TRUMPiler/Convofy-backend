@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator; // Import this
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -18,6 +19,8 @@ import java.util.UUID;
 public class Friends {
 
     @Id
+    @UuidGenerator
+    @GeneratedValue
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
