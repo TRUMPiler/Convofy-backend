@@ -20,19 +20,24 @@ public class FriendsController {
 
     @PostMapping("/add")
     public ResponseEntity<Response<String>> addFriend(@RequestBody FriendRequestDTO request) {
-        if (request.getUserId().equals(request.getFriendId())) {
-            return ResponseEntity.badRequest().body(new Response<>(false, "You cannot add yourself as a friend", null));
-        }
+            try {
+                if (request.getUserId().equals(request.getFriendId())) {
+                    return ResponseEntity.badRequest().body(new Response<>(false, "You cannot add yourself as a friend", null));
+                }
 
-        Optional<Friends> existingRequest = friendsRepository.findByUserIdAndFriendId(request.getUserId(), request.getFriendId());
-        if (existingRequest.isPresent()) {
-            return ResponseEntity.badRequest().body(new Response<>(false, "Friend request already exists", null));
-        }
+                Optional<Friends> existingRequest = friendsRepository.findByUserIdAndFriendId(request.getUserId(), request.getFriendId());
+                if (existingRequest.isPresent()) {
+                    return ResponseEntity.badRequest().body(new Response<>(false, "Friend request already exists", null));
+                }
 
-        Friends friendRequest = new Friends(request.getUserId(), request.getFriendId(), "pending");
-        friendsRepository.save(friendRequest);
-        return ResponseEntity.ok(new Response<>(true, "Friend request sent", null));
-    }
+                Friends friendRequest = new Friends(request.getUserId(), request.getFriendId(), "pending");
+                friendsRepository.save(friendRequest);
+                return ResponseEntity.ok(new Response<>(true, "Friend request sent", null));
+            }catch (Exception e){
+                System.out.println(e.getMessage());
+                return  ResponseEntity.badRequest().body(new Response<>(false, e.getMessage(), null));
+            }
+        }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<Response<String>> updateFriendStatus(@PathVariable UUID id, @RequestParam String status) {
