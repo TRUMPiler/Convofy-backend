@@ -19,17 +19,17 @@ public class FriendsController {
     private FriendsRepository friendsRepository;
 
     @PostMapping("/add")
-    public ResponseEntity<Response<String>> addFriend(@RequestBody FriendRequestDTO friends) {
-        if (friends.getUserId().equals(friends.getFriendId())) {
+    public ResponseEntity<Response<String>> addFriend(@RequestBody FriendRequestDTO request) {
+        if (request.getUserId().equals(request.getFriendId())) {
             return ResponseEntity.badRequest().body(new Response<>(false, "You cannot add yourself as a friend", null));
         }
 
-        Optional<Friends> existingRequest = friendsRepository.findByUserIdAndFriendId(friends.getUserId(),friends.getFriendId());
+        Optional<Friends> existingRequest = friendsRepository.findByUserIdAndFriendId(request.getUserId(), request.getFriendId());
         if (existingRequest.isPresent()) {
             return ResponseEntity.badRequest().body(new Response<>(false, "Friend request already exists", null));
         }
 
-        Friends friendRequest = new Friends(friends.getUserId(), friends.getFriendId(), "pending");
+        Friends friendRequest = new Friends(request.getUserId(), request.getFriendId(), "pending");
         friendsRepository.save(friendRequest);
         return ResponseEntity.ok(new Response<>(true, "Friend request sent", null));
     }
