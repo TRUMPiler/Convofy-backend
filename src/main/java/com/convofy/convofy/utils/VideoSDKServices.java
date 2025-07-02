@@ -12,7 +12,7 @@ import com.convofy.convofy.utils.Response;
 @Service
 public class VideoSDKServices {
 
-    private final String API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiIxMmRhZDAzYS1mZTYwLTQzNjgtODI1MS0wYWVhZWU1MWNlOTkiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTc0OTcyOTEzNiwiZXhwIjoxNzgxMjY1MTM2fQ.Da75q68UMwTo325_PgD74qqYj3Ah2Per--IQdU4chNg"; // Replace with your token
+    private final String API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiIxMmRhZDAzYS1mZTYwLTQzNjgtODI1MS0wYWVhZWU1MWNlOTkiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTc1MDUzMTkyNCwiZXhwIjoxOTA4MzE5OTI0fQ.f6Rn8tCTjFjmasYajm_DPQq0cyGMk7ftpl8AzeeNiwo"; // Replace with your token
     private final String BASE_URL = "https://api.videosdk.live/v2";
 
     public String createMeeting() {
@@ -38,6 +38,7 @@ public class VideoSDKServices {
                 return responseObject.get("roomId").getAsString();
             }
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             e.printStackTrace();
         }
         return null;

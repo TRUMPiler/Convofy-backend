@@ -16,10 +16,10 @@ public class WebConfig {
                         // Remove allowedOriginPatterns("*"). List specific origins directly.
                         .allowedOrigins(
                                 "https://convofy-frontend-bdk8o1bqx-naishal-doshis-projects.vercel.app",
-                                "https://convofy-frontend-weld.vercel.app"
+                                "https://convofy-frontend-weld.vercel.app",
                                 // If you need localhost for local frontend development, include it.
                                 // Otherwise, for production build, keep only your production Vercel origins.
-                                // "http://localhost:5173",
+                                 "http://localhost:5173"
                                 // "http://192.168.29.132:5173"
                         )
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // Allowed HTTP methods
