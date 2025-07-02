@@ -6,8 +6,6 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 @Data
 public class FriendRequestDTO {
     private UUID id;
