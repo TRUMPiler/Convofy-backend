@@ -62,9 +62,9 @@ public class FriendsController {
         }
     }
     @GetMapping("/list")
-    public ResponseEntity<Response<Iterable<Friends>>> getFriendsList(@RequestParam UUID userId) {
-        Iterable<Friends> friendsList = friendsRepository.findByUserIdOrFriendIdAndStatus(userId, userId, "accepted");
-        return ResponseEntity.ok(new Response<>(true, "Friends list retrieved", friendsList));
+    public ResponseEntity<Response<List<Friends>>> getFriendsList(@RequestParam UUID userId) {
+        List<Friends> friendsList = friendsRepository.findAllFriendsByUserIdAndStatus(userId, "accepted");
+        return ResponseEntity.ok(new Response<>(true, "Friends list retrieved successfully", friendsList));
     }
 
     @DeleteMapping("/unfriend")
