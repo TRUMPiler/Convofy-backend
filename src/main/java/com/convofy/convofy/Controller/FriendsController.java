@@ -61,8 +61,8 @@ public class FriendsController {
             return ResponseEntity.badRequest().body(new Response<>(false,"Another Error Occurred",null));
         }
     }
-    @GetMapping("/list")
-    public ResponseEntity<Response<List<Friends>>> getFriendsList(@RequestParam UUID userId) {
+    @GetMapping("/list/{userId}")
+    public ResponseEntity<Response<List<Friends>>> getFriendsList(@PathVariable UUID userId) {
         List<Friends> friendsList = friendsRepository.findAllFriendsByUserIdAndStatus(userId, "accepted");
         return ResponseEntity.ok(new Response<>(true, "Friends list retrieved successfully", friendsList));
     }
