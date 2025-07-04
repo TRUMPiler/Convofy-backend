@@ -25,7 +25,7 @@ public class FriendsService {
     public UserRepository userRepository;
 
     @Autowired
-    public FriendsService(FriendsRepository friendsRepository) {
+    public FriendsService(FriendsRepository friendsRepository,UserRepository userRepository) {
         this.friendsRepository = friendsRepository;
         this.userRepository = userRepository;
     }
