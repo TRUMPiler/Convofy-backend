@@ -3,6 +3,7 @@ package com.convofy.convofy.Controller;
 import com.convofy.convofy.Entity.Friends;
 import com.convofy.convofy.Repository.FriendsRepository;
 import com.convofy.convofy.Service.FriendsService;
+import com.convofy.convofy.dto.FriendDTO;
 import com.convofy.convofy.dto.FriendRequestDTO;
 import com.convofy.convofy.dto.IncomingFriendRequestDTO;
 import com.convofy.convofy.dto.OutgoingFriendRequestDTO;
@@ -62,9 +63,15 @@ public class FriendsController {
         }
     }
     @GetMapping("/list/{userId}")
-    public ResponseEntity<Response<List<Friends>>> getFriendsList(@PathVariable UUID userId) {
-        List<Friends> friendsList = friendsRepository.findAllFriendsByUserIdAndStatus(userId, "accepted");
-        return ResponseEntity.ok(new Response<>(true, "Friends list retrieved successfully", friendsList));
+    public ResponseEntity<Response<List<FriendDTO>>> getFriendsList(@PathVariable UUID userId) {
+        try {
+    
+            List<FriendDTO> friendsList = friendsService.getFriendsList(userId);
+            return ResponseEntity.ok(new Response<>(true, "Friends list retrieved successfully", friendsList));
+        }catch (Exception e)
+        {
+            return ResponseEntity.badRequest().body(new Response<>(false,e.getMessage(),null));
+        }
     }
 
     @DeleteMapping("/unfriend")
@@ -83,9 +90,22 @@ public class FriendsController {
     public ResponseEntity<Response<List<IncomingFriendRequestDTO>>> getIncomingFriendRequests(@RequestParam UUID userId) {
         try {
             List<IncomingFriendRequestDTO> requests = friendsService.getPendingIncomingFriendRequests(userId);
+
+            // This line was causing the error if 'requests' was empty.
+            // It's better to remove it or add a check.
+            // For debugging, you could check if the list is not empty before printing:
+            if (!requests.isEmpty()) {
+                System.out.println("First incoming request ID: " + requests.get(0).getRequestId());
+            } else {
+                System.out.println("No incoming friend requests for userId: " + userId);
+            }
+
             return ResponseEntity.ok(new Response<>(true, "Incoming friend requests retrieved", requests));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response<>(false, "Failed to retrieve incoming requests: " + e.getMessage(), null));
+            // Log the full stack trace for better debugging in development
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response<>(false, "Failed to retrieve incoming requests: " + e.getMessage(), null));
         }
     }
 

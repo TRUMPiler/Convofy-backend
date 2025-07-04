@@ -8,9 +8,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserBasicInfoDTO {
-    private UUID userId;
-    private String name;
-    private String email;
-    private String avatar;
+public class FriendDTO {
+    private UUID friendshipId;
+    private UserBasicInfoDTO friendInfo;
 }

@@ -4,15 +4,13 @@ import com.convofy.convofy.Entity.Friends;
 import com.convofy.convofy.Entity.User;
 import com.convofy.convofy.Repository.FriendsRepository;
 import com.convofy.convofy.Repository.UserRepository;
-import com.convofy.convofy.dto.FriendRequestDTO;
-import com.convofy.convofy.dto.IncomingFriendRequestDTO;
-import com.convofy.convofy.dto.OutgoingFriendRequestDTO;
-import com.convofy.convofy.dto.UserBasicInfoDTO;
+import com.convofy.convofy.dto.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,7 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class FriendsService {
 
-    private FriendsRepository friendsRepository;
+    private final FriendsRepository friendsRepository;
     public UserRepository userRepository;
 
     @Autowired
@@ -105,10 +103,12 @@ public class FriendsService {
         List<Friends> requests = friendsRepository.findByFriendIdAndStatus(userId, "pending");
         return requests.stream().map(req -> {
             User senderUser = userRepository.findById(req.getUserId()).orElse(null);
+
             UserBasicInfoDTO senderInfo = (senderUser != null) ?
                     new UserBasicInfoDTO(senderUser.getUserId(), senderUser.getName(), senderUser.getEmail(), senderUser.getImage()) :
                     new UserBasicInfoDTO(req.getUserId(), "Unknown User", "unknown@example.com", "https://ui-avatars.com/api/?name=NA&background=random");
-            return new IncomingFriendRequestDTO(req.getUserId(), senderInfo, req.getCreatedAt());
+            System.out.println(senderInfo.getUserId());
+            return new IncomingFriendRequestDTO(req.getId(), senderInfo, req.getCreatedAt());
         }).collect(Collectors.toList());
     }
 
@@ -121,5 +121,36 @@ public class FriendsService {
                     new UserBasicInfoDTO(req.getFriendId(), "Unknown User", "unknown@example.com", "https://ui-avatars.com/api/?name=NA&background=random");
             return new OutgoingFriendRequestDTO(req.getId(), receiverInfo, req.getCreatedAt());
         }).collect(Collectors.toList());
+    }
+    public List<FriendDTO> getFriendsList(UUID userId) {
+        List<Friends> acceptedFriendships = friendsRepository.findAllFriendsByUserIdAndStatus(userId, "accepted");
+
+        List<FriendDTO> friendsList = new ArrayList<>();
+
+        for (Friends friendship : acceptedFriendships) {
+            UUID friendId;
+            if (friendship.getUserId().equals(userId)) {
+                friendId = friendship.getFriendId();
+            } else {
+                friendId = friendship.getUserId();
+            }
+
+            Optional<User> friendUserOptional = userRepository.findById(friendId);
+
+            if (friendUserOptional.isPresent()) {
+                User friendUser = friendUserOptional.get();
+                UserBasicInfoDTO friendInfo = new UserBasicInfoDTO(
+                        friendUser.getUserId(),
+                        friendUser.getName(),
+                        friendUser.getEmail(),
+                        friendUser.getImage()
+                );
+                friendsList.add(new FriendDTO(friendship.getId(), friendInfo));
+            } else {
+                friendsList.add(new FriendDTO(friendship.getId(),
+                        new UserBasicInfoDTO(friendId, "Deleted User", "deleted@example.com", "https://ui-avatars.com/api/?name=DU&background=random")));
+            }
+        }
+        return friendsList;
     }
 }
