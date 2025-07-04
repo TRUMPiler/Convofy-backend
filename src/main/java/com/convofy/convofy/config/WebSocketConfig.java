@@ -24,7 +24,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").setAllowedOrigins("http://localhost:5173","https://convofy-frontend-weld.vercel.app","https://convofy.fun","https://www.convofy.fun").withSockJS();
+        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").setAllowedOrigins("http://localhost:5173","https://convofy-frontend-weld.vercel.app","https://www.convofy.fun").withSockJS();
     }
 
     // Register our custom channel interceptor
