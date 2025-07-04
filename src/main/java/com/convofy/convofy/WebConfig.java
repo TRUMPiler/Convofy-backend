@@ -20,7 +20,7 @@ public class WebConfig {
                                 // If you need localhost for local frontend development, include it.
                                 // Otherwise, for production build, keep only your production Vercel origins.
                                  "http://localhost:5173",
-                                "https://www.convofy.fun"
+                                "https://convofy.fun"
                                 // "http://192.168.29.132:5173"
                         )
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // Allowed HTTP methods
