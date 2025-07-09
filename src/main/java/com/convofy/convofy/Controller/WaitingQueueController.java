@@ -77,6 +77,7 @@ public class WaitingQueueController {
 
     @GetMapping("/leave/{userid}")
     public synchronized ResponseEntity<Response<String>> leavingqueue(@PathVariable String userid) {
+        System.out.println("User " + userid + " is leaving queue.");
         if (userid == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response<>(false, "User ID must be provided.", null));
         }
@@ -90,6 +91,7 @@ public class WaitingQueueController {
 
         if (waitingQueue.checkuserinqueue(userId)) {
             if (waitingQueue.removeuserfromqueue(userId)) {
+
                 return ResponseEntity.status(HttpStatus.OK).body(new Response<>(true, "User removed from queue.", null));
             } else {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response<>(false, "Failed to remove user from queue unexpectedly.", null));

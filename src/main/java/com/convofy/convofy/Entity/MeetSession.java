@@ -26,6 +26,8 @@ public class MeetSession
     private String userid2="";
     private String meetid="";
     private Date date=null;
-    private Time time=null;
-//    private boolean status=false;
+    private Time start_time=null;
+    private boolean status=false;
+    private Time end_time=null;
+    private boolean endedByClient = false;
 }

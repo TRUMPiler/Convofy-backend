@@ -1,6 +1,7 @@
 package com.convofy.convofy.Controller;
 
 
+import com.convofy.convofy.dto.UserBasicInfoDTO;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,13 +26,16 @@ public class WebSocketController {
 //        String message = "Message #" + counter++;
 //        messagingTemplate.convertAndSend("/topic/updates", message);
 //    }
-    public void notifyUser(String userId, String useremail,String meetingId) {
-        Map<String, String> payload = new HashMap<>();
-        payload.put("meetId", meetingId);
-        payload.put("message", "You have been matched!");
-        payload.put("userId", userId);
-        payload.put("useremail", useremail);
-        System.out.println("Sending message to user: " + userId);
-        messagingTemplate.convertAndSend("/queue/matches", payload);
-    }
+     public void notifyUser(String userId, UserBasicInfoDTO partnerInfo, String meetingId,String sessionid) {
+         Map<String, String> payload = new HashMap<>();
+         payload.put("meetId", meetingId);
+         payload.put("message", "You have been matched!");
+         payload.put("userId", userId); // The recipient user's ID
+         payload.put("partnerId", partnerInfo.getUserId().toString()); // Partner's ID
+         payload.put("partnerName", partnerInfo.getName()); // Partner's name
+         payload.put("partnerAvatar", partnerInfo.getAvatar()); // Partner's avatar
+         payload.put("sessionId", sessionid);
+         System.out.println("Sending match notification to user: " + userId + " for meetId: " + meetingId + " with partner: " + partnerInfo.getName());
+         messagingTemplate.convertAndSend("/queue/matches", payload);
+     }
 }
