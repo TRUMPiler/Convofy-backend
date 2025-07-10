@@ -95,9 +95,11 @@ public class CallController {
 
         if (meetSession.getUserid1() != null && !meetSession.getUserid1().isEmpty()) {
             waitingQueue.changeStatus(UUID.fromString(meetSession.getUserid1()), "IDLE");
+            waitingQueue.removeuserfromqueue(UUID.fromString(meetSession.getUserid1()));
         }
         if (meetSession.getUserid2() != null && !meetSession.getUserid2().isEmpty()) {
             waitingQueue.changeStatus(UUID.fromString(meetSession.getUserid2()), "IDLE");
+            waitingQueue.removeuserfromqueue(UUID.fromString(meetSession.getUserid2()));
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(new Response<>(true, "Call ended and notification sent.", null));
