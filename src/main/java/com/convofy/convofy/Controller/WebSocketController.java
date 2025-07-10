@@ -26,7 +26,7 @@ public class WebSocketController {
 //        String message = "Message #" + counter++;
 //        messagingTemplate.convertAndSend("/topic/updates", message);
 //    }
-     public void notifyUser(String userId, UserBasicInfoDTO partnerInfo, String meetingId,String sessionid) {
+     public synchronized void notifyUser(String userId, UserBasicInfoDTO partnerInfo, String meetingId,String sessionid) {
          Map<String, String> payload = new HashMap<>();
          payload.put("meetId", meetingId);
          payload.put("message", "You have been matched!");

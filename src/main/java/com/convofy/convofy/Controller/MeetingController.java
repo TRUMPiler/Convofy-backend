@@ -1,9 +1,9 @@
 package com.convofy.convofy.Controller;
 import com.convofy.convofy.Entity.User;
-import com.convofy.convofy.Entity.WaitingQueue;
-import com.convofy.convofy.Repository.MeetRepository;
 import com.convofy.convofy.Entity.MeetSession;
+import com.convofy.convofy.Repository.MeetRepository;
 import com.convofy.convofy.Repository.UserRepository;
+import com.convofy.convofy.dto.MatchNotificationDTO;
 import com.convofy.convofy.dto.UserBasicInfoDTO;
 import com.convofy.convofy.utils.Response;
 import com.convofy.convofy.utils.VideoSDKServices;
@@ -14,7 +14,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Time;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -53,20 +52,26 @@ public class MeetingController {
 
 
     @PostMapping("/create")
-    public ResponseEntity<Response<MeetSession>> createMeeting(@RequestBody MeetSession meetSession) throws Exception {
+    public ResponseEntity<Response<MatchNotificationDTO>> createMeeting(@RequestBody MeetSession meetSession) throws Exception {
         if(meetSession==null)
         {
             System.err.println("meetSession is null");
+            // Always return a ResponseEntity
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response<>(false,"Meeting session data is null",null));
         }
         if(meetSession.getUserid1()==null||meetSession.getUserid2()==null)
         {
             System.err.println("meetSession.getUserid1 and meetSession.getUserid2 is null");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response<MeetSession>(false,"",null));
+            // Always return a ResponseEntity
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response<>(false,"Both user IDs are required",null));
         }
         String meetingId = CreateMeetid();
 
         if (meetingId != null) {
-            webSocketController=new WebSocketController(this.simpMessagingTemplate);
+            // Initialize WebSocketController if it's not already injected/managed by Spring
+            if (webSocketController == null) { // Added null check for robustness
+                webSocketController = new WebSocketController(this.simpMessagingTemplate);
+            }
             meetSession.setMeetid(meetingId);
             meetSession.setSessionid(UUID.randomUUID().toString());
             meetRepository.save(meetSession);
@@ -76,41 +81,55 @@ public class MeetingController {
             Optional<User> user2Optional = userRepository.findById(UUID.fromString(meetSession.getUserid2()));
 
             if (user1Optional.isPresent() && user2Optional.isPresent()) {
-                User user1 = user1Optional.get();
-                User user2 = user2Optional.get();
+                User user1 = user1Optional.get(); // Meet creator
+                User user2 = user2Optional.get(); // Waiting person
 
                 // Create UserBasicInfoDTOs for each user
                 UserBasicInfoDTO user1Info = new UserBasicInfoDTO(user1.getUserId(), user1.getName(), user1.getEmail(), user1.getImage());
                 UserBasicInfoDTO user2Info = new UserBasicInfoDTO(user2.getUserId(), user2.getName(), user2.getEmail(), user2.getImage());
 
-                // Notify user1 about user2, and user2 about user1 with rich partner info
-                webSocketController.notifyUser(user1.getUserId().toString(), user2Info, meetSession.getMeetid(),meetSession.getSessionid());
-                webSocketController.notifyUser(user2.getUserId().toString(), user1Info,  meetSession.getMeetid(),meetSession.getSessionid());
+                // Prepare MatchNotificationDTO for the meet creator (user1) for HTTP response
+                MatchNotificationDTO matchNotificationDTOForCreator = new MatchNotificationDTO(
+                        meetSession.getMeetid(),
+                        "You have been matched!",
+                        user1Info.getUserId().toString(), // Recipient: User1
+                        user2Info.getUserId().toString(), // Partner: User2
+                        user2Info.getName(),
+                        user2Info.getAvatar(),
+                        meetSession.getSessionid()
+                );
 
+                // Notify user2 (the waiting person) about user1 (the creator) via WebSocket
+                webSocketController.notifyUser(
+                        user2.getUserId().toString(), // Recipient: User2
+                        user1Info,                     // Partner for User2 is User1
+                        meetSession.getMeetid(),
+                        meetSession.getSessionid()
+                );
+
+                // Return MatchNotificationDTO to the meet creator (user1) via HTTP response
+                return ResponseEntity.status(HttpStatus.CREATED).body(new Response<>(true, "MeetId Created Successfully", matchNotificationDTOForCreator));
             } else {
                 System.err.println("One or both users not found when creating meeting. User1 ID: " + meetSession.getUserid1() + ", User2 ID: " + meetSession.getUserid2());
-                // Fallback: Notify with basic info if user details cannot be fetched
-                webSocketController.notifyUser(meetSession.getUserid1(), new UserBasicInfoDTO(null, "Unknown User", null, null), meetSession.getMeetid(),meetSession.getSessionid());
-                webSocketController.notifyUser(meetSession.getUserid2(), new UserBasicInfoDTO(null, "Unknown User", null, null), meetSession.getMeetid(),meetSession.getSessionid());
+                // If users not found, return an appropriate error response
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response<>(false, "One or both users not found.", null));
             }
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new Response<>(true, "MeetId Created Successfully", meetSession));
         } else {
+            // If meetingId could not be created
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response<>(false, "Failed to create meeting", null));
+                    .body(new Response<>(false, "Failed to create meeting ID", null));
         }
     }
 
-    public boolean exitCall(MeetSession meetSession) throws Exception {
+    public boolean exitCall(MeetSession meetSession) { // Removed throws Exception as it's not needed here
         if(meetSession.getUserid1()==null||meetSession.getUserid2()==null||meetSession.getSessionid()==null)
         {
-            System.err.println("meetSession.getUserid1 and meetSession.getUserid2 is null");
+            System.err.println("meetSession.getUserid1, meetSession.getUserid2, or meetSession.getSessionid is null for exitCall");
             return false;
         }
         meetSession.setStatus(false);
         meetSession.setEnd_time(Time.valueOf(LocalTime.now()));
-       meetRepository.save(meetSession);
-       return true;
+        meetRepository.save(meetSession);
+        return true;
     }
 }
