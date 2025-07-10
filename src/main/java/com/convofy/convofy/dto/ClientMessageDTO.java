@@ -12,5 +12,6 @@ import java.util.UUID;
 public class ClientMessageDTO {
     private UUID chatroomId;
     private String content;
+    private UUID MessageId;
     // The senderId will be extracted from the authenticated Principal on the backend
 }

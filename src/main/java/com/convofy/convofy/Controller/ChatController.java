@@ -26,12 +26,9 @@ import java.util.stream.Collectors;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 // Changed from @Controller to @RestController
-import org.springframework.web.bind.annotation.RestController; // Changed from @Controller
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication; // Import Authentication
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping; // Import RequestMapping
 
 import java.time.Instant;
 
@@ -153,6 +150,97 @@ public class ChatController {
                     .body(new com.convofy.convofy.utils.Response<>(false, "Failed to retrieve chat history: " + e.getMessage(), null));
         }
     }
+    @MessageMapping("/chat.editMessage")
+    public void editMessage(@RequestBody ClientMessageDTO clientMessageDTO,SimpMessageHeaderAccessor headerAccessor) {
+        Authentication authentication =(Authentication) headerAccessor.getUser();
+        UserPrincipal user=null;
+        if(authentication!=null&&authentication.getPrincipal() instanceof UserPrincipal){
+            user=(UserPrincipal)authentication.getPrincipal();
+
+        }
+        if(user==null)
+        {
+            System.err.println("Unauthenticated or invalid principal user tried to delete message.");
+            return;
+        }
+        UUID messageId=clientMessageDTO.getMessageId();
+        UUID chatroomId = clientMessageDTO.getChatroomId();
+        UUID editorId = user.getUserId();
+        String newContent = clientMessageDTO.getContent();
+        if (messageId == null || newContent == null || newContent.trim().isEmpty()) {
+            System.err.println("Invalid messageId or empty content for edit by " + user.getName());
+            return;
+        }
+        Optional<ChatMessage> existingMessageOptional = chatMessageRepository.findById(messageId);
+        if (existingMessageOptional.isEmpty()) {
+            System.err.println("Message with id " + messageId + " not found. Message not sent by " + user.getName());
+        }
+        ChatMessage existingMessage = existingMessageOptional.get();
+        existingMessage.setContent(newContent+" (1)");
+        existingMessage.setTimestamp(Instant.now());
+        chatMessageRepository.save(existingMessage);
+        System.out.println("Edited message: " + messageId + " by " + user.getName() + " in room " + chatroomId);
+        ChatMessageResponseDTO messageResponse = new ChatMessageResponseDTO(
+                existingMessage.getMessageId().toString(),
+                existingMessage.getSenderId().toString(),
+                user.getName(), // Sender's name (which is the editor's name)
+                user.getImage() != null ? user.getImage() : "https://github.com/shadcn.png",
+                existingMessage.getContent(),
+                existingMessage.getTimestamp().toString()
+        );
+        messagingTemplate.convertAndSend("/topic/chatroom/" + chatroomId + "/messages", messageResponse);
+        System.out.println("Broadcasted edited message to /topic/chatroom/" + chatroomId + "/messages");
+    }
+
+
+    @MessageMapping("/chat.deleteMessage")
+    public void deleteMessage(@RequestBody ClientMessageDTO clientMessageDTO,SimpMessageHeaderAccessor headerAccessor) {
+        Authentication authentication = (Authentication) headerAccessor.getUser();
+        UserPrincipal userPrincipal = null;
+
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        }
+
+        if (userPrincipal == null) {
+            System.err.println("Unauthenticated or invalid principal user tried to delete message.");
+            return;
+        }
+        UUID messageId=clientMessageDTO.getMessageId();
+        UUID chatroomId = clientMessageDTO.getChatroomId();
+        UUID deleterId = userPrincipal.getUserId();
+        if (messageId == null) {
+            System.err.println("Invalid messageId for delete by " + userPrincipal.getName());
+            return;
+        }
+
+        Optional<ChatMessage> existingMessageOptional = chatMessageRepository.findById(messageId);
+
+        if (existingMessageOptional.isEmpty()) {
+            System.err.println("Message " + messageId + " not found for delete by " + userPrincipal.getName());
+            return;
+        }
+        ChatMessage existingMessage = existingMessageOptional.get();
+        if (!existingMessage.getSenderId().equals(deleterId)) {
+            System.err.println("User " + userPrincipal.getName() + " tried to delete message " + messageId + " but is not the sender.");
+            return;
+        }
+
+        existingMessage.setContent("[Message deleted]");
+        chatMessageRepository.save(existingMessage);
+        System.out.println("Deleted message: " + messageId + " by " + userPrincipal.getName() + " from room " + chatroomId);
+        ChatMessageResponseDTO deletionNotification = new ChatMessageResponseDTO(
+                messageId.toString(),
+                deleterId.toString(),
+                userPrincipal.getName(),
+                userPrincipal.getImage() != null ? userPrincipal.getImage() : "https://github.com/shadcn.png",
+                "[Message Deleted]", // Indicate deletion
+                Instant.now().toString()
+        );
+        messagingTemplate.convertAndSend("/topic/chatroom/" + chatroomId + "/messages", deletionNotification);
+        System.out.println("Broadcasted edited message to /topic/chatroom/" + chatroomId + "/messages");
+    }
+
 
     @MessageMapping("/chat.joinRoom")
     public void joinRoom(@Payload JoinRoomRequest joinRequest, SimpMessageHeaderAccessor headerAccessor) {
