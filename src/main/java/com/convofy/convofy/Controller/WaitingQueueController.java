@@ -74,6 +74,7 @@ public class WaitingQueueController {
         }
     }
 
+
     @GetMapping("/leave/{userid}")
     public synchronized ResponseEntity<Response<String>> leavingqueue(@PathVariable String userid) {
         System.out.println("User " + userid + " is leaving queue.");

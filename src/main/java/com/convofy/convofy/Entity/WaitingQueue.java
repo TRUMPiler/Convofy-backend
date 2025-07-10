@@ -115,7 +115,7 @@ public class WaitingQueue {
             String status = entry.getValue();
 
             if (!potentialPartnerId.equals(currentUser) && "IDLE".equals(status)) {
-                changeStatus(potentialPartnerId, "BUSY");
+//                changeStatus(potentialPartnerId, "BUSY");
                 System.out.println("Found IDLE partner " + potentialPartnerId + " for user " + currentUser + " in interest " + interestId + ". Partner status set to BUSY.");
                 return potentialPartnerId;
             }
