@@ -177,7 +177,6 @@ public class ChatController {
         }
         ChatMessage existingMessage = existingMessageOptional.get();
         existingMessage.setContent(newContent+" (1)");
-        existingMessage.setTimestamp(Instant.now());
         chatMessageRepository.save(existingMessage);
         System.out.println("Edited message: " + messageId + " by " + user.getName() + " in room " + chatroomId);
         ChatMessageResponseDTO messageResponse = new ChatMessageResponseDTO(
