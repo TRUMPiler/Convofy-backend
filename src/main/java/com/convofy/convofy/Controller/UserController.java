@@ -4,9 +4,10 @@ import com.convofy.convofy.Repository.UserRepository;
 import com.convofy.convofy.Entity.User;
 import com.convofy.convofy.utils.LoginRequest;
 import com.convofy.convofy.utils.Response;
-import com.convofy.convofy.utils.PasswordHasher; // Keep this
-import com.convofy.convofy.utils.JwtUtil; // Import JwtUtil
-import com.convofy.convofy.utils.LoginResponse; // Import LoginResponse
+import com.convofy.convofy.utils.PasswordHasher;
+import com.convofy.convofy.utils.JwtUtil;
+import com.convofy.convofy.utils.LoginResponse;
+import com.convofy.convofy.utils.GoogleLoginRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,10 +26,10 @@ public class UserController {
     private UserRepository userRepository;
 
     @Autowired
-    private JwtUtil jwtUtil; // Inject JwtUtil
+    private JwtUtil jwtUtil;
 
     @PostMapping
-    public ResponseEntity<Response<LoginResponse>> createUser(@RequestBody User user) { // Changed return type
+    public ResponseEntity<Response<LoginResponse>> createUser(@RequestBody User user) {
         try {
             if (userRepository.existsByEmail(user.getEmail())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -38,9 +39,8 @@ public class UserController {
             PasswordHasher passwordHasher = new PasswordHasher();
             user.setPassword(passwordHasher.hashPassword(user.getPassword()));
 
-            User savedUser = userRepository.save(user); // Save to get the generated userId
+            User savedUser = userRepository.save(user);
 
-            // Generate JWT for the newly created user using their email as subject
             String jwt = jwtUtil.generateToken(savedUser.getEmail());
 
             LoginResponse loginResponse = new LoginResponse(
@@ -130,7 +130,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Response<LoginResponse>> LoginUser(@RequestBody LoginRequest loginRequest) { // Changed return type
+    public ResponseEntity<Response<LoginResponse>> LoginUser(@RequestBody LoginRequest loginRequest) {
         try {
             Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
 
@@ -147,13 +147,9 @@ public class UserController {
                         .body(new Response<>(false, "Invalid email or password", null));
             }
 
-            // IMPORTANT: For real-time presence (WebSockets), we will rely on WebSocket events
-            // and an in-memory map. This DB update for onlineStatus here might become redundant
-            // for active chat sessions, but useful for overall user status (e.g., for user profiles).
             user.setOnlineStatus(true);
             userRepository.save(user);
 
-            // Generate JWT for the logged-in user using their email as subject
             String jwt = jwtUtil.generateToken(user.getEmail());
 
             LoginResponse loginResponse = new LoginResponse(
@@ -169,6 +165,52 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Response<>(false, "An error occurred during login", null));
+        }
+    }
+
+    @PostMapping("/google-login")
+    public ResponseEntity<Response<LoginResponse>> handleGoogleLogin(@RequestBody GoogleLoginRequest googleRequest) {
+        try {
+            Optional<User> userOptional = userRepository.findByEmail(googleRequest.getEmail());
+            User user;
+            HttpStatus status = HttpStatus.OK;
+
+            if (userOptional.isPresent()) {
+                user = userOptional.get();
+                user.setName(googleRequest.getName());
+                user.setImage(googleRequest.getImage());
+            } else {
+                user = new User();
+                user.setName(googleRequest.getName());
+                user.setEmail(googleRequest.getEmail());
+                user.setImage(googleRequest.getImage());
+
+                PasswordHasher passwordHasher = new PasswordHasher();
+                String randomPassword = UUID.randomUUID().toString();
+                user.setPassword(passwordHasher.hashPassword(randomPassword));
+                status = HttpStatus.CREATED;
+            }
+
+            user.setOnlineStatus(true);
+            User savedUser = userRepository.save(user);
+
+            String jwt = jwtUtil.generateToken(savedUser.getEmail());
+
+            LoginResponse loginResponse = new LoginResponse(
+                    jwt,
+                    savedUser.getUserId(),
+                    savedUser.getEmail(),
+                    savedUser.getName(),
+                    savedUser.getImage()
+            );
+
+            String message = (status == HttpStatus.CREATED) ? "User registered and logged in successfully" : "Login successful";
+
+            return ResponseEntity.status(status).body(new Response<>(true, message, loginResponse));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response<>(false, "An error occurred during Google Sign-In: " + e.getMessage(), null));
         }
     }
 

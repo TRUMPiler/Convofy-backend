@@ -16,24 +16,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.data.domain.PageRequest; // For creating Pageable instances
-import org.springframework.data.domain.Pageable;   // For Pageable interface
-import org.springframework.data.domain.Sort;      // For sorting results
-
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-// Changed from @Controller to @RestController
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication; // Import Authentication
-
+import org.springframework.security.core.Authentication;
 import java.time.Instant;
 
-@RestController // Use @RestController for RESTful APIs
-@RequestMapping("/api") // Add a class-level RequestMapping for /api base path
+@RestController
+@RequestMapping("/api")
 public class ChatController {
 
     @Autowired
@@ -53,11 +49,11 @@ public class ChatController {
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload ClientMessageDTO clientMessage, SimpMessageHeaderAccessor headerAccessor) {
-        Authentication authentication = (Authentication) headerAccessor.getUser(); // First, cast to Authentication
+        Authentication authentication = (Authentication) headerAccessor.getUser();
         UserPrincipal userPrincipal = null;
 
         if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            userPrincipal = (UserPrincipal) authentication.getPrincipal(); // Then, get the principal from it
+            userPrincipal = (UserPrincipal) authentication.getPrincipal();
         }
 
         if (userPrincipal == null) {
@@ -76,10 +72,10 @@ public class ChatController {
         }
 
         ChatMessage chatMessage = new ChatMessage();
-        chatMessage.setChatroomId(chatroomId); // Correct: Pass UUID directly
-        chatMessage.setSenderId(senderId);     // Correct: Pass UUID directly
+        chatMessage.setChatroomId(chatroomId);
+        chatMessage.setSenderId(senderId);
         chatMessage.setContent(content);
-        chatMessage.setTimestamp(Instant.now()); // Correct: Pass Instant directly
+        chatMessage.setTimestamp(Instant.now());
 
         chatMessageRepository.save(chatMessage);
         System.out.println("Saved message: " + chatMessage.getMessageId() + " from " + userPrincipal.getName() + " to room " + chatroomId);
@@ -125,7 +121,7 @@ public class ChatController {
 
             List<ChatMessageResponseDTO> messageDTOs = chatMessages.stream().map(msg -> {
                 String senderName = "Unknown User";
-                String senderAvatar = "https://github.com/shadcn.png"; // Default avatar
+                String senderAvatar = "https://github.com/shadcn.png";
 
                 User sender = senderMap.get(msg.getSenderId());
                 if (sender != null) {
@@ -146,7 +142,7 @@ public class ChatController {
             return ResponseEntity.ok(new com.convofy.convofy.utils.Response<>(true, "Chat history retrieved successfully", messageDTOs));
         } catch (Exception e) {
             System.err.println("Error fetching chat history for room " + chatroomId + ": " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR) // Changed from OK to INTERNAL_SERVER_ERROR
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new com.convofy.convofy.utils.Response<>(false, "Failed to retrieve chat history: " + e.getMessage(), null));
         }
     }
@@ -182,7 +178,7 @@ public class ChatController {
         ChatMessageResponseDTO messageResponse = new ChatMessageResponseDTO(
                 existingMessage.getMessageId().toString(),
                 existingMessage.getSenderId().toString(),
-                user.getName(), // Sender's name (which is the editor's name)
+                user.getName(),
                 user.getImage() != null ? user.getImage() : "https://github.com/shadcn.png",
                 existingMessage.getContent(),
                 existingMessage.getTimestamp().toString()
